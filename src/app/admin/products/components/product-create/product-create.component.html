@@ -7,14 +7,18 @@
       <div class="row">
         <div class="col-xs">
           <mat-form-field>
-            <input placeholder="Id" formControlName="id" matInput type="text">
-          </mat-form-field>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-xs">
-          <mat-form-field>
-            <input placeholder="Title" formControlName="title" matInput type="text">
+            <input placeholder="Title" formControlName="name" matInput type="text">
+            <div class="messages" *ngIf="nameField.touched && nameField.invalid">
+              <mat-error *ngIf="nameField.hasError('required')">
+                Required field
+              </mat-error>
+              <mat-error *ngIf="nameField.hasError('minlength')">
+                It must have at least 4 characters
+              </mat-error>
+              <mat-error *ngIf="nameField.hasError('not_available')">
+                This category name is already in use
+              </mat-error>
+            </div>
           </mat-form-field>
         </div>
       </div>
@@ -42,10 +46,21 @@
           <input type="file" (change)="uploadFile($event)">
         </div>
       </div>
+      <div class="row">
+        <div class="col-xs">
+          <mat-form-field>
+            <mat-label>Category</mat-label>
+            <mat-select formControlName="category_id">
+              <mat-option [value]="category._id" *ngFor="let category of categories">{{ category.name }}</mat-option>
+            </mat-select>
+            <!-- <input placeholder="Category" formControlName="category_id" matInput type="number"> -->
+          </mat-form-field>
+        </div>
+      </div>
     </mat-card-content>
     <mat-card-actions>
       <button [disabled]="form.invalid" mat-raised-button type="submit">Guardar</button>
     </mat-card-actions>
   </mat-card>
-  
+
 </form>

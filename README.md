@@ -1028,3 +1028,411 @@ And must be implemented into the component html file:
 
 ...
 ```
+
+## Grouped validators
+
+For group validation between different inputs in the same form, a custom validator can be developed:
+
+Into the `validators.ts` file:
+
+```ts
+import { AbstractControl } from '@angular/forms';
+
+export class MyValidators {
+  static isPriceValid(control: AbstractControl) {
+    const value = control.value;
+    console.log(value);
+    if (value > 10000) {
+      return { price_invalid: true };
+    }
+    return null;
+  }
+
+  static validPassword(control: AbstractControl) {
+    const value = control.value;
+    if (!containsNumber(value)) {
+      return { invalid_password: true };
+    }
+    return null;
+  }
+
+  static matchPasswords(control: AbstractControl) { 👈
+    const password = control.get('password').value; 👈
+    const confirmPassword = control.get('confirmPassword').value; 👈
+    if (password === confirmPassword) { 👈
+      return null; 👈
+    }
+    return { match_password: true }; 👈
+  }
+}
+
+function containsNumber(value: string): boolean {
+  return value.split('').some(isNumber);
+}
+
+function isNumber(value: string) {
+  return !isNaN(parseInt(value, 10));
+}
+```
+
+Into the component ts file:
+
+```ts
+import { Component, OnInit } from "@angular/core";
+import { FormBuilder, FormGroup, Validators } from "@angular/forms";
+import { Router } from "@angular/router";
+
+import { AuthService } from "./../../../core/services/auth.service";
+import { MyValidators } from "../../../utils/validators"; 👈
+
+@Component({
+  selector: "app-register",
+  templateUrl: "./register.component.html",
+  styleUrls: ["./register.component.scss"],
+})
+export class RegisterComponent implements OnInit {
+  form: FormGroup;
+
+  constructor(
+    private formBuilder: FormBuilder,
+    private router: Router,
+    private authService: AuthService
+  ) {
+    this.buildForm();
+  }
+
+  ngOnInit() {}
+
+  register(event: Event) {
+    event.preventDefault();
+    if (this.form.valid) {
+      const value = this.form.value;
+      this.authService.createUser(value.email, value.password).then(() => {
+        this.router.navigate(["/auth/login"]);
+      });
+    }
+  }
+
+  private buildForm() {
+    this.form = this.formBuilder.group(
+      {
+        email: ["", [Validators.required]],
+        password: [
+          "",
+          [
+            Validators.required,
+            Validators.minLength(6),
+            MyValidators.validPassword,
+          ],
+        ],
+        confirmPassword: ["", [Validators.required]],
+      },
+      {
+        validators: MyValidators.matchPasswords, 👈
+      }
+    );
+  }
+}
+```
+
+Into the component html file:
+
+```ts
+<form [formGroup]="form" (ngSubmit)="register($event)">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Registro</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="row">
+        <div class="col-xs">
+          <mat-form-field>
+            <mat-label>Email</mat-label>
+            <input placeholder="email" formControlName="email" matInput type="email">
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs">
+          <mat-form-field>
+            <mat-label>Password</mat-label>
+            <input placeholder="password" formControlName="password" matInput type="password">
+            <div *ngIf="form.get('password').touched && form.get('password').invalid">
+              <mat-error *ngIf="form.get('password').hasError('invalid_password')">
+                Must contain at least one number
+              </mat-error>
+            </div>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs">
+          <mat-form-field>
+            <mat-label>Confirm Password</mat-label>
+            <input placeholder="password" formControlName="confirmPassword" matInput type="password">
+            <div *ngIf="form.get('confirmPassword').touched && form.errors">
+              <mat-error *ngIf="form.hasError('match_password')"> 👈
+                Password doesnt match
+              </mat-error>
+            </div>
+          </mat-form-field>
+        </div>
+      </div>
+    </mat-card-content>
+    <mat-card-actions>
+      <button [disabled]="form.invalid" mat-raised-button type="submit">Registro</button>
+    </mat-card-actions>
+  </mat-card>
+
+</form>
+
+```
+
+## Runtime validators
+
+If it is needed to set a validation on runtime (a validation that depends on some data that the user is going to introduce), this must be developed into the component code:
+
+Into the component ts file:
+
+```ts
+import { Component, OnInit } from "@angular/core";
+import { FormBuilder, FormGroup, Validators } from "@angular/forms";
+import { Router } from "@angular/router";
+
+import { AuthService } from "./../../../core/services/auth.service";
+import { MyValidators } from "../../../utils/validators";
+
+@Component({
+  selector: "app-register",
+  templateUrl: "./register.component.html",
+  styleUrls: ["./register.component.scss"],
+})
+export class RegisterComponent implements OnInit {
+  form: FormGroup;
+
+  constructor(
+    private formBuilder: FormBuilder,
+    private router: Router,
+    private authService: AuthService
+  ) {
+    this.buildForm();
+  }
+
+  ngOnInit() {}
+
+  register(event: Event) {
+    event.preventDefault();
+    if (this.form.valid) {
+      const value = this.form.value;
+      this.authService.createUser(value.email, value.password).then(() => {
+        this.router.navigate(["/auth/login"]);
+      });
+    }
+  }
+
+  private buildForm() {
+    this.form = this.formBuilder.group(
+      {
+        email: ["", [Validators.required]],
+        password: [
+          "",
+          [
+            Validators.required,
+            Validators.minLength(6),
+            MyValidators.validPassword,
+          ],
+        ],
+        confirmPassword: ["", [Validators.required]],
+        type: ["company", [Validators.required]],
+        companyName: ["", [Validators.required]],
+      },
+      {
+        validators: MyValidators.matchPasswords,
+      }
+    );
+    this.typeField.valueChanges.subscribe((value) => { 👈
+      console.log(value);
+      if (value === "compañy") { 👈
+        this.companyNameField.setValidators([Validators.required]); 👈
+      } else { 👈
+        this.companyNameField.setValidators(null); 👈
+      }
+      this.companyNameField.updateValueAndValidity(); 👈
+    });
+  }
+
+  get typeField() {
+    return this.form.get("type");
+  }
+
+  get companyNameField() {
+    return this.form.get("companyName");
+  }
+}
+```
+
+In this case, if the type field is selected as "company", the company name field is required. If type is selected as "customer", company name field is not required.
+
+## Async validators
+
+Async validators can be used to validate new information vs information already saved into the database.
+
+First, into the service ts file, a call to the API is created. This call must response with the information needed. In this case this API endpoint checks if a category name is already present in the database.
+
+```ts
+  checkCategory(name: string) {
+    return this.http.post(`${environment.url_api}/categories/availability`, { 👈
+      name,
+    });
+  }
+```
+
+The response has this format:
+
+```json
+{
+  "isAvailable": true
+}
+```
+
+If the response is true, the name is available, if the response is false, the name is already in use.
+
+Into the `validator.ts` file:
+
+```ts
+import { AbstractControl } from "@angular/forms";
+import { map } from "rxjs/operators";
+
+import { CategoriesService } from "../core/services/categories.service"; 👈
+
+export class MyValidators {
+
+  //async validation with database response:
+  static validateCategory(service: CategoriesService) { 👈
+    return (control: AbstractControl) => {
+      const value = control.value;
+      return service.checkCategory(value).pipe( 👈
+        map((response: any) => {
+          const isAvailable = response.isAvailable; 👈
+          if (!isAvailable) {
+            return { not_available: true }; 👈
+          }
+          return null; 👈
+        })
+      );
+    };
+  }
+}
+```
+
+Then, into the component ts file:
+
+```ts
+import { Component, OnInit } from "@angular/core";
+import { Router } from "@angular/router";
+import {
+  FormControl,
+  FormBuilder,
+  Validators,
+  FormGroup,
+} from "@angular/forms";
+import { AngularFireStorage } from "@angular/fire/storage";
+import { finalize } from "rxjs/operators";
+
+import { CategoriesService } from "../../../../core/services/categories.service"; 👈
+import { MyValidators } from "../../../../utils/validators"; 👈
+
+@Component({
+  selector: "app-category-form",
+  templateUrl: "./category-form.component.html",
+  styleUrls: ["./category-form.component.scss"],
+})
+export class CategoryFormComponent implements OnInit {
+  form: FormGroup;
+
+  constructor(
+    private formBuilder: FormBuilder,
+    private categoriesService: CategoriesService, 👈
+  ) {
+    this.buildForm();
+  }
+
+  ngOnInit(): void {}
+
+  private buildForm() {
+    this.form = this.formBuilder.group({
+      name: [
+        "",
+        [Validators.required, Validators.minLength(4)],
+        MyValidators.validateCategory(this.categoriesService), 👈
+      ],
+      image: ["", Validators.required],
+    });
+  }
+
+  ...
+
+}
+```
+
+And finally, into the component html file:
+
+```html
+<form [formGroup]="form" (ngSubmit)="save()">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Categoría</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="row">
+        <div class="col-xs">
+          <mat-form-field>
+            <mat-label>Nombre</mat-label> 👈
+            <input
+              placeholder="Nombre"
+              formControlName="name"
+              matInput
+              type="text"
+            />
+            <div
+              class="messages"
+              *ngIf="nameField.touched && nameField.invalid"
+            >
+              <mat-error *ngIf="nameField.hasError('required')">
+                Required field
+              </mat-error>
+              <mat-error *ngIf="nameField.hasError('minlength')">
+                It must have at least 4 characters
+              </mat-error>
+              <mat-error *ngIf="nameField.hasError('not_available')" 👈>
+                This category name is already in use 👈
+              </mat-error>
+            </div>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs">
+          <img *ngIf="imageField.value" [src]="imageField.value" />
+          <input
+            (change)="uploadFile($event)"
+            placeholder="Image"
+            type="file"
+          />
+          <div
+            class="messages"
+            *ngIf="imageField.touched && imageField.invalid"
+          >
+            <mat-error *ngIf="imageField.hasError('required')">
+              Este campo es requerido
+            </mat-error>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+    <mat-card-actions>
+      <button mat-raised-button type="submit">Guardar categoría</button>
+    </mat-card-actions>
+  </mat-card>
+</form>
+```

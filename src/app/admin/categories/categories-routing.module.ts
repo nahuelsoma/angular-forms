@@ -3,25 +3,25 @@ import { Routes, RouterModule } from '@angular/router';
 
 import { CategoriesComponent } from './components/categories/categories.component';
 import { CategoryFormComponent } from './components/category-form/category-form.component';
-
+import { CategoryComponent } from './containers/category/category.component';
 
 const routes: Routes = [
   {
     path: '',
-    component: CategoriesComponent
+    component: CategoriesComponent,
   },
   {
     path: 'create',
-    component: CategoryFormComponent
+    component: CategoryComponent,
   },
   {
     path: 'edit/:id',
-    component: CategoryFormComponent
-  }
+    component: CategoryComponent,
+  },
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class CategoriesRoutingModule { }
+export class CategoriesRoutingModule {}
