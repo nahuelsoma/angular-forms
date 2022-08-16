@@ -1436,3 +1436,72 @@ And finally, into the component html file:
   </mat-card>
 </form>
 ```
+
+## Optimize performance using webpack-bundle-analyzer
+
+Webpack bundle analyzer: analyzes the packages used in the project.
+
+```
+npm install webpack-bundle-analyzer --save-dev
+```
+
+Compile with the flag to generate a statistics file:
+
+```
+ng build --prod --stats-json
+```
+
+Into the dist folder, locate the stats-es2015.json file: `dist/my-project/stats-es2015.json`
+
+Using npx, run the command to generate the analysis:
+
+```
+npx webpack-bundle-analyzer dist/my-project/stats-es2015.json
+```
+
+As a result, the required analysis is shown: `webpack bundle analyzer is started at http://127.0.0.1:8888`
+
+With bundlephobia.com it is possible to compare libraries and use the most suitable for the weight of our app, thus reducing the loading time of the application.
+
+💹 https://bundlephobia.com/
+
+For example, for date functions, `moment` is more than 90% heavier than `date-fns`. Because of this, if the date manipulation is needed, `date-fns` is the library that brings the functionality without paying high cost in performance.
+
+### Angular Budget
+
+💹 https://perf-budget-calculator.firebaseapp.com/
+
+It' s a tool to set the minimum weight of cost for our applications.
+
+The angular.json file allows us to configure the maximum weight of our packages.
+
+Anyway it is not normally necessary to configure it since angular does it for us.
+
+```json
+// angular.json
+
+...
+
+"budgets": [
+  {
+    "type": "initial",
+    "maximumWarning": "2mb",
+    "maximumError": "5mb"
+  },
+  {
+    "type": "anyComponentStyle",
+    "maximumWarning": "6kb",
+    "maximumError": "10kb"
+  }
+]
+
+...
+
+
+```
+
+## Website Cache (Progressive Web App - PWA)
+
+To implement cache, use:
+
+📖 https://angular.io/guide/service-worker-getting-started

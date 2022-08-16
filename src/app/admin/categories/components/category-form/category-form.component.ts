@@ -52,7 +52,11 @@ export class CategoryFormComponent implements OnInit {
     this.form = this.formBuilder.group({
       name: [
         '',
-        [Validators.required, Validators.minLength(4)],
+        [
+          Validators.required,
+          Validators.minLength(4),
+          Validators.maxLength(10),
+        ],
         MyValidators.validateCategory(this.categoriesService),
       ],
       image: ['', Validators.required],
